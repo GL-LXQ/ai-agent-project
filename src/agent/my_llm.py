@@ -8,4 +8,4 @@ llm = ChatOpenAI(
   base_url=DEEPSEEK_BASE_URL,
 )
 
-zhipuai_client = ZhipuAiClient(api_key="418ea3f347af4118ab7d528e92034d4f18ea3f347af4118ab7d528e92034d4f.EsmTkpqLA1Il10pA")
+zhipuai_client = ZhipuAiClient(api_key="418ea3f347af4118ab7d528e92034d4f.EsmTkpqLA1Il10pA")

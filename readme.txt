@@ -11,8 +11,10 @@ deactivate
 pip install langchain langchain-openai dotenv
 pip install --upgrade "langgraph-cli[inmem]"
 pip install -e .
-
 pip install zai-sdk==0.2.0
+
+# text2sql项目所需要的包
+pip install sqlalchemy pymysql loguru
 ## 项目启动
 langgraph dev
 
