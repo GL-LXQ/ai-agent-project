@@ -1,3 +1,4 @@
+import json
 from typing import List, Optional
 
 from sqlalchemy import create_engine, inspect, text
@@ -90,6 +91,82 @@ class MySqlDatabaseManger:
             log.exception(e)
             raise ValueError(f"获取表结构失败：{str(e)}")
 
+    def execute_query(self, query: str) -> str:
+        """
+        执行sql语句并返回结果
+        Args:
+            query: SQL查询语句
+        """
+        # 安全检查：防止数据修改操作
+        forbidden_keywords = ["insert", "update", "delete", "drop", "truncate", "create", "grant"]
+        query_lower = query.lower().strip()
+        if not query_lower.startswith(("select", "with")) and any(
+            keyword in query_lower for keyword in forbidden_keywords):
+            raise ValueError("出于安全考虑，只允许执行SELECT查询和WITH查询")
+
+        try:
+            with self.engine.connect() as connection:
+                result = connection.execute(text(query_lower))
+
+                #获取列名
+                columns = result.keys()
+                print(columns)
+                #获取数据
+                rows = result.fetchmany(100)
+                if not rows:
+                    return "查询结果为空"
+
+                #格式化结果
+                result_data = []
+                for row in rows:
+                    row_dict = {}
+                    for i, col in enumerate(columns):
+                        #处理无法序列化的数据类型
+                        try:
+                            if row[i] is not None:
+                                json.dumps(row[i])
+                            row_dict[col] = row[i]
+                        except (TypeError, ValueError):
+                            row_dict[col] = str(row[i])
+                    result_data.append(row_dict)
+                return json.dumps(result_data, ensure_ascii=False, indent=2)
+        except SQLAlchemyError as e:
+            log.debug(f"sql执行失败:{e}")
+            raise ValueError(f"sql执行失败:{str(e)}")
+
+    def validate_query(self, query: str) -> str:
+        """
+        验证 SQL 查询语法是否正确
+
+        Args:
+            query: 要验证的 SQL 查询
+        """
+
+        # 基本语法检查
+        if not query or not query.strip():
+            return "错误：查询不能为空"
+
+        # 检查是否以 SELECT 或 WITH 开头
+        query_lower = query.lower().strip()
+        if not query_lower.startswith(('select', 'with')):
+            return "警告：建议使用 SELECT 或 WITH 查询，其他操作可能被限制"
+
+        # 尝试解析查询（不实际执行）
+        try:
+            with self.engine.connect() as connection:
+                # 使用 SQLAlchemy 的 text() 来解析但不执行
+                parsed_query = text(query)
+
+                # 尝试编译查询来检查语法
+                compiled = parsed_query.compile(
+                    compile_kwargs={"literal_binds": True}
+                )
+
+                return "SQL 查询语法看起来正确"
+
+        except Exception as e:
+            log.exception(e)
+            return f"SQL 语法错误：{str(e)}"
 
 if __name__ == "__main__":
     #配置数据库连接信息
@@ -104,4 +181,5 @@ if __name__ == "__main__":
     print(data_base_manger.get_table_names())
     print(data_base_manger.get_tables_name_with_comments())
     print(data_base_manger.get_table_schema(data_base_manger.get_table_names()))
-
+    print(data_base_manger.execute_query("select * from category"))
+    print(data_base_manger.validate_query("select * from category"))
