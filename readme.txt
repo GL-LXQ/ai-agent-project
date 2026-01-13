@@ -15,8 +15,10 @@ pip install zai-sdk==0.2.0
 
 # text2sql项目所需要的包
 pip install sqlalchemy pymysql loguru
+
 ## 项目启动
 langgraph dev
+langgraph dev --allow-blocking   允许阻塞操作
 
-推送导origin远端的master分支
+推送到origin远端的master分支
 git push -u origin master
